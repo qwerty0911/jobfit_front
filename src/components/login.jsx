@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { saveUserUuid } from '../utils/auth';
 
 const LOGIN_URL = 'http://localhost:8000/login';
 
@@ -31,7 +32,14 @@ const Login = () => {
                 throw new Error(`로그인 요청이 실패했습니다. (${response.status})`);
             }
 
-            navigate(`/chat/${encodeURIComponent(trimmedUserId)}`);
+            const loginData = await response.json();
+
+            if (!loginData.user_uuid) {
+                throw new Error('로그인 응답에 user_uuid가 없습니다.');
+            }
+
+            saveUserUuid(loginData.user_uuid);
+            navigate('/chat');
         } catch (requestError) {
             setError(
                 requestError instanceof TypeError
