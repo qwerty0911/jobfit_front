@@ -9,6 +9,8 @@ const SidePanel = ({
     recommendedJobs,
     isLoading,
     error,
+    isJobsLoading,
+    jobsError,
     onAddSkill,
     onAddResume,
 }) => {
@@ -193,6 +195,10 @@ const SidePanel = ({
                             </div>
                         </dl>
                     </section>
+                ) : isJobsLoading ? (
+                    <p role="status">추천 공고를 불러오는 중입니다...</p>
+                ) : jobsError ? (
+                    <p role="alert">{jobsError}</p>
                 ) : (
                     <section className="recommended-jobs" role="tabpanel">
                         <div className="recommended-jobs-heading">

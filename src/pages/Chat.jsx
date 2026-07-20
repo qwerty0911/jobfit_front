@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ChatPanel from '../components/chat/ChatPanel'
 import SidePanel from '../components/chat/SidePanel'
@@ -7,35 +7,16 @@ import './Chat.css'
 
 const API_URL = 'http://localhost:8000'
 
-const SAMPLE_RECOMMENDED_JOBS = [
-    {
-        id: 1,
-        title: '프론트엔드 개발자',
-        company: '테크웨이브',
-        location: '서울 강남구',
-    },
-    {
-        id: 2,
-        title: 'React 웹 개발자',
-        company: '넥스트커리어',
-        location: '경기 성남시',
-    },
-    {
-        id: 3,
-        title: '주니어 프론트엔드 엔지니어',
-        company: '그로우랩',
-        location: '서울 마포구 · 재택 가능',
-    },
-]
-
 const Chat = () => {
     const navigate = useNavigate()
     const [userUuid] = useState(() => getUserUuid())
     const [sidePanelTab, setSidePanelTab] = useState('profile')
     const [profile, setProfile] = useState(null)
-    const [recommendedJobs] = useState(SAMPLE_RECOMMENDED_JOBS)
+    const [recommendedJobs, setRecommendedJobs] = useState([])
     const [isProfileLoading, setIsProfileLoading] = useState(true)
     const [profileError, setProfileError] = useState('')
+    const [isJobsLoading, setIsJobsLoading] = useState(true)
+    const [jobsError, setJobsError] = useState('')
     const [message, setMessage] = useState('')
     const [isChatLoading, setIsChatLoading] = useState(false)
     const [chatError, setChatError] = useState('')
@@ -44,6 +25,52 @@ const Chat = () => {
     ])
 
     const displayName = profile?.name || '사용자'
+
+    const fetchRecommendedJobs = useCallback(async (signal) => {
+        if (!userUuid) {
+            setIsJobsLoading(false)
+            return
+        }
+
+        setIsJobsLoading(true)
+        setJobsError('')
+
+        try {
+            const response = await fetch(
+                `${API_URL}/postings/${encodeURIComponent(userUuid)}`,
+                { signal },
+            )
+
+            if (!response.ok) {
+                throw new Error(`추천 공고를 불러오지 못했습니다. (${response.status})`)
+            }
+
+            const postings = await response.json()
+
+            if (!Array.isArray(postings)) {
+                throw new Error('추천 공고 응답 형식이 올바르지 않습니다.')
+            }
+
+            setRecommendedJobs(postings.map((posting) => ({
+                id: posting.id,
+                company: posting.company_name,
+                title: posting.job_title,
+                location: posting.location,
+            })))
+        } catch (requestError) {
+            if (requestError.name !== 'AbortError') {
+                setJobsError(
+                    requestError instanceof TypeError
+                        ? '추천 공고 서버에 연결할 수 없습니다.'
+                        : requestError.message,
+                )
+            }
+        } finally {
+            if (!signal?.aborted) {
+                setIsJobsLoading(false)
+            }
+        }
+    }, [userUuid])
 
     useEffect(() => {
         if (!userUuid) {
@@ -90,6 +117,14 @@ const Chat = () => {
         return () => controller.abort()
     }, [navigate, userUuid])
 
+    useEffect(() => {
+        const controller = new AbortController()
+
+        fetchRecommendedJobs(controller.signal)
+
+        return () => controller.abort()
+    }, [fetchRecommendedJobs])
+
     const handleLogout = () => {
         clearUserUuid()
         navigate('/', { replace: true })
@@ -133,7 +168,7 @@ const Chat = () => {
     }
 
     const handleAddResume = async (resume) => {
-        const response = await fetch(`${API_URL}/profile/add_coverletter`, {
+        const response = await fetch(`${API_URL}/profile/documents`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -236,6 +271,8 @@ const Chat = () => {
                     text: assistantMessage,
                 },
             ])
+
+            void fetchRecommendedJobs()
         } catch (requestError) {
             setChatError(
                 requestError instanceof TypeError
@@ -267,6 +304,8 @@ const Chat = () => {
                 recommendedJobs={recommendedJobs}
                 isLoading={isProfileLoading}
                 error={profileError}
+                isJobsLoading={isJobsLoading}
+                jobsError={jobsError}
                 onAddSkill={handleAddSkill}
                 onAddResume={handleAddResume}
             />
