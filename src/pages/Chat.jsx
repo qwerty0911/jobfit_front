@@ -21,7 +21,7 @@ const Chat = () => {
     const [isChatLoading, setIsChatLoading] = useState(false)
     const [chatError, setChatError] = useState('')
     const [messages, setMessages] = useState([
-        { id: 1, sender: 'assistant', text: '안녕하세요! \n저는 당신의 취업 파트너 jobfit입니다. \n저의 목적은 크게 두가지입니다. 당신에게 안맞는 채용 공고를 검색하고 공고의 자격 요건 등을 사용자에게 얼마나 적절한지 확인합니다.' },
+        { id: 1, sender: 'assistant', text: '안녕하세요! 취업 파트너 JobFit입니다. \n원하는 채용 공고를 찾아드리고, 이력서를 바탕으로 공고와의 적합도를 분석해드려요. \n어떤 공고를 찾고 계신가요?' },
     ])
 
     const displayName = profile?.name || '사용자'
@@ -197,7 +197,16 @@ const Chat = () => {
 
         setProfile((currentProfile) => ({
             ...currentProfile,
-            cover_letters: [...(currentProfile?.cover_letters ?? []), resume],
+            documents: [
+                ...(currentProfile?.documents ?? []),
+                {
+                    document_id: crypto.randomUUID(),
+                    document_type: 'resume',
+                    embedding_status: 'pending',
+                    created_at: new Date().toISOString(),
+                    ...resume,
+                },
+            ],
         }))
     }
 

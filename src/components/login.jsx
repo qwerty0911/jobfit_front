@@ -52,21 +52,31 @@ const Login = () => {
     };
 
     return (
-        <form onSubmit={handleLogin}>
-            <h2>login 모달</h2>
-            <p>
+        <form className="login-form" onSubmit={handleLogin}>
+            <div className="login-field">
+                <label htmlFor="user-id">아이디</label>
                 <input
+                    id="user-id"
                     value={userId}
-                    onChange={(event) => setUserId(event.target.value)}
+                    onChange={(event) => {
+                        setUserId(event.target.value);
+                        setError('');
+                    }}
                     placeholder="아이디를 입력하세요"
-                    aria-label="아이디"
                     autoComplete="username"
+                    disabled={isLoading}
+                    autoFocus
                 />
-            </p>
-            <button type="submit" disabled={isLoading || !userId.trim()}>
-                {isLoading ? '로그인 중...' : 'login'}
+            </div>
+            {error && <p className="login-error" role="alert">{error}</p>}
+            <button
+                className="login-submit-button"
+                type="submit"
+                disabled={isLoading || !userId.trim()}
+            >
+                <span>{isLoading ? '로그인 중...' : '시작하기'}</span>
+                {!isLoading && <span aria-hidden="true">→</span>}
             </button>
-            {error && <p role="alert">{error}</p>}
         </form>
     )
 

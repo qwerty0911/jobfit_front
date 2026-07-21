@@ -20,7 +20,9 @@ const SidePanel = ({
     const [skillError, setSkillError] = useState('')
     const [isResumeModalOpen, setIsResumeModalOpen] = useState(false)
     const skills = profile?.skills ?? []
-    const resumes = profile?.cover_letters ?? []
+    const resumes = (profile?.documents ?? []).filter(
+        (document) => document.document_type === 'resume',
+    )
 
     const closeSkillInput = () => {
         setIsAddingSkill(false)
@@ -180,7 +182,7 @@ const SidePanel = ({
                                     {resumes.length > 0 ? (
                                         <ul className="data-list">
                                             {resumes.map((item, index) => (
-                                                <li key={`${item.title}-${index}`}>
+                                                <li key={item.document_id ?? `${item.title}-${index}`}>
                                                     <button type="button">
                                                         <strong>{item.title}</strong>
                                                         <span>{item.content}</span>
